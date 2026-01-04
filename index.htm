@@ -5,16 +5,14 @@
   <meta name="viewport" content="width=device-width,initial-scale=1" />
   <title>DS Europe – Hero</title>
   <style>
-    :root{
-      --bg1:#ffffff;
-      --bg2:#f5f7fb;
-    }
-    body{ margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; background: var(--bg1); }
+    :root{ --bg1:#ffffff; --bg2:#f5f7fb; }
+    html,body{ height:100%; }
+    body{ margin:0; background:var(--bg1); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
     .hero{
-      position: relative;
-      height: min(72vh, 640px);
-      min-height: 520px;
-      overflow: hidden;
+      position:relative;
+      height:min(72vh, 640px);
+      min-height:520px;
+      overflow:hidden;
       background: radial-gradient(ellipse at center, var(--bg1) 0%, var(--bg2) 55%, var(--bg1) 100%);
     }
     canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
@@ -23,27 +21,24 @@
       display:flex; align-items:center; justify-content:center;
       pointer-events:none;
     }
+    .glass{
+      position:absolute;
+      width:min(680px, 88vw);
+      height:min(220px, 28vh);
+      border-radius:28px;
+      background: rgba(255,255,255,.55);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      box-shadow: 0 22px 70px rgba(0,0,0,.08);
+      border: 1px solid rgba(255,255,255,.65);
+      opacity:.55;
+    }
     .logo{
       width:min(420px, 76vw);
       height:auto;
       filter: drop-shadow(0 14px 34px rgba(0,0,0,.12));
       transform: translateZ(0);
     }
-
-    /* Delikatny “glass” pod logo (premium, ale subtelnie) */
-    .glass{
-      position:absolute;
-      width:min(680px, 88vw);
-      height:min(220px, 28vh);
-      border-radius: 28px;
-      background: rgba(255,255,255,.55);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 22px 70px rgba(0,0,0,.08);
-      border: 1px solid rgba(255,255,255,.65);
-      opacity: .55;
-    }
-
     @media (prefers-reduced-motion: reduce){
       .glass{ display:none; }
     }
@@ -58,296 +53,210 @@
     </div>
   </section>
 
-  <script type="module">
-    import * as THREE from "https://unpkg.com/three@0.160.0/build/three.module.js";
-    import { EffectComposer } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/EffectComposer.js";
-    import { RenderPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/RenderPass.js";
-    import { UnrealBloomPass } from "https://unpkg.com/three@0.160.0/examples/jsm/postprocessing/UnrealBloomPass.js";
+  <!-- Three.js (bez modułów) -->
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
 
-    const canvas = document.getElementById("c");
-    const hero = document.getElementById("hero");
-
-    // Renderer
-    const renderer = new THREE.WebGLRenderer({
-      canvas,
-      antialias: true,
-      alpha: true,
-      powerPreference: "high-performance"
-    });
-    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.setSize(hero.clientWidth, hero.clientHeight, false);
-
-    // Scene + Camera
-    const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(42, hero.clientWidth/hero.clientHeight, 0.1, 200);
-    camera.position.set(0, 0, 26);
-
-    // Postprocessing (subtelny bloom = “premium”)
-    const composer = new EffectComposer(renderer);
-    composer.addPass(new RenderPass(scene, camera));
-    const bloom = new UnrealBloomPass(
-      new THREE.Vector2(hero.clientWidth, hero.clientHeight),
-      0.65,   // strength
-      0.85,   // radius
-      0.22    // threshold
-    );
-    composer.addPass(bloom);
-
-    // --- Premium mesh: punkty + “wires” w 3D, animacja w shaderze (GPU noise) ---
-
-    // Ustawienia jakości
-    const POINTS = 140;               // 120–180
-    const CONNECTIONS_PER_POINT = 3;  // 2–4
-    const RADIUS = 18;
-
-    // Rozkład: „pusty środek” pod logo, większa gęstość po bokach
-    function samplePoint(){
-      // rozkład eliptyczny + odrzucanie środka
-      for(let tries=0; tries<40; tries++){
-        const x = (Math.random()*2 - 1) * RADIUS;
-        const y = (Math.random()*2 - 1) * (RADIUS*0.55);
-        const z = (Math.random()*2 - 1) * 4.2;
-
-        // maska środka
-        const cx = x/9.0, cy = y/4.0;
-        const center = Math.exp(-(cx*cx + cy*cy));  // 0..1
-        if (Math.random() < (1 - 0.78*center)) return new THREE.Vector3(x,y,z);
+  <script>
+    (function(){
+      const hero = document.getElementById("hero");
+      const canvas = document.getElementById("c");
+      if(!hero || !canvas || !window.THREE){
+        console.error("Brak THREE lub brak elementów DOM.");
+        return;
       }
-      return new THREE.Vector3(
-        (Math.random()*2 - 1)*RADIUS,
-        (Math.random()*2 - 1)*(RADIUS*0.55),
-        (Math.random()*2 - 1)*4.2
-      );
-    }
 
-    const base = new Float32Array(POINTS * 3);
-    const phase = new Float32Array(POINTS);
-    for(let i=0;i<POINTS;i++){
-      const p = samplePoint();
-      base[i*3+0]=p.x; base[i*3+1]=p.y; base[i*3+2]=p.z;
-      phase[i]=Math.random()*Math.PI*2;
-    }
+      const renderer = new THREE.WebGLRenderer({
+        canvas,
+        antialias: true,
+        alpha: true,
+        powerPreference: "high-performance"
+      });
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 
-    // Punkty (Points) z własnym shaderem
-    const pointsGeo = new THREE.BufferGeometry();
-    pointsGeo.setAttribute("position", new THREE.BufferAttribute(base, 3));
-    pointsGeo.setAttribute("aPhase", new THREE.BufferAttribute(phase, 1));
+      const scene = new THREE.Scene();
+      const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
+      camera.position.set(0, 0, 26);
 
-    const pointsMat = new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      uniforms: {
-        uTime: { value: 0 },
-        uSize: { value: 12.0 * Math.min(window.devicePixelRatio, 2) },
-        uBlue: { value: new THREE.Color("#6aaeff") },
-        uOrange: { value: new THREE.Color("#ff9a4a") }
-      },
-      vertexShader: `
-        uniform float uTime;
-        uniform float uSize;
-        attribute float aPhase;
-        varying float vMix;
-        varying float vFade;
+      // Premium: miękki “fog” dla głębi
+      scene.fog = new THREE.FogExp2(0xffffff, 0.012);
 
-        // hash noise (lekki, szybki)
-        float hash(vec3 p){
-          p = fract(p * 0.3183099 + vec3(0.1,0.2,0.3));
-          p *= 17.0;
-          return fract(p.x*p.y*p.z*(p.x+p.y+p.z));
+      // Parametry
+      const POINTS = 150;              // 120–200
+      const RADIUS = 18;
+      const CONNECTIONS = 3;           // 2–4
+      const linkMax = 6.8;             // dystans łączenia (mniejszy = bardziej “czysto”)
+
+      // Rozkład z pustym środkiem (pod logo)
+      function samplePoint(){
+        for(let tries=0; tries<50; tries++){
+          const x = (Math.random()*2 - 1) * RADIUS;
+          const y = (Math.random()*2 - 1) * (RADIUS*0.55);
+          const z = (Math.random()*2 - 1) * 4.0;
+
+          const cx = x/9.0, cy = y/4.0;
+          const center = Math.exp(-(cx*cx + cy*cy));
+          if (Math.random() < (1 - 0.78*center)) return new THREE.Vector3(x,y,z);
         }
-
-        void main(){
-          vec3 pos = position;
-
-          // “pływanie” (subtelnie) + różne fazy
-          float t = uTime*0.55 + aPhase;
-          float n = hash(pos + t);
-          pos.x += sin(t + pos.y*0.35) * 0.55 + (n-0.5)*0.25;
-          pos.y += cos(t*0.9 + pos.x*0.25) * 0.35 + (n-0.5)*0.20;
-          pos.z += sin(t*0.8 + pos.y*0.15) * 0.22;
-
-          // kolor: lewa->prawa (blue->orange)
-          vMix = smoothstep(-18.0, 18.0, pos.x);
-
-          vec4 mv = modelViewMatrix * vec4(pos, 1.0);
-          gl_Position = projectionMatrix * mv;
-
-          // rozmiar punktu zależny od głębi
-          float size = uSize / max(1.0, -mv.z);
-          gl_PointSize = clamp(size, 2.0, 16.0);
-
-          // fade w centrum (pod logo)
-          float center = exp(-(pos.x*pos.x)/(2.0*55.0) - (pos.y*pos.y)/(2.0*18.0));
-          vFade = 1.0 - 0.55*center;
-        }
-      `,
-      fragmentShader: `
-        uniform vec3 uBlue;
-        uniform vec3 uOrange;
-        varying float vMix;
-        varying float vFade;
-
-        void main(){
-          // miękka kropka
-          vec2 uv = gl_PointCoord*2.0 - 1.0;
-          float d = dot(uv, uv);
-          float alpha = smoothstep(1.0, 0.0, d);
-          alpha = pow(alpha, 1.6) * 0.85 * vFade;
-
-          vec3 col = mix(uBlue, uOrange, vMix);
-          gl_FragColor = vec4(col, alpha);
-        }
-      `
-    });
-
-    const points = new THREE.Points(pointsGeo, pointsMat);
-    scene.add(points);
-
-    // Linie: precompute najbliższych sąsiadów (premium wygląda, a nadal jest szybkie)
-    const positions = [];
-    const indices = [];
-    const pts = [];
-    for(let i=0;i<POINTS;i++){
-      pts.push(new THREE.Vector3(base[i*3], base[i*3+1], base[i*3+2]));
-    }
-
-    // znajdź k najbliższych (O(n^2) dla 140 = ok)
-    for(let i=0;i<POINTS;i++){
-      const dists = [];
-      for(let j=0;j<POINTS;j++){
-        if(i===j) continue;
-        const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, dz=pts[i].z-pts[j].z;
-        const dist = dx*dx+dy*dy+dz*dz;
-        dists.push([dist, j]);
+        return new THREE.Vector3(
+          (Math.random()*2 - 1) * RADIUS,
+          (Math.random()*2 - 1) * (RADIUS*0.55),
+          (Math.random()*2 - 1) * 4.0
+        );
       }
-      dists.sort((a,b)=>a[0]-b[0]);
-      for(let k=0;k<CONNECTIONS_PER_POINT;k++){
-        const j = dists[k][1];
-        indices.push(i, j);
+
+      const pts = [];
+      const phase = new Float32Array(POINTS);
+      for(let i=0;i<POINTS;i++){
+        pts.push(samplePoint());
+        phase[i] = Math.random()*Math.PI*2;
       }
-    }
 
-    // geometry linii (z dynamiczną animacją w shaderze)
-    const lineGeo = new THREE.BufferGeometry();
-    lineGeo.setAttribute("position", new THREE.BufferAttribute(base.slice(), 3));
-    lineGeo.setIndex(indices);
+      // Punkty: Sprites + additive (daje “glow” bez postprocessingu)
+      const spriteTex = (function(){
+        const s = 128;
+        const cnv = document.createElement("canvas");
+        cnv.width = cnv.height = s;
+        const ctx = cnv.getContext("2d");
+        const g = ctx.createRadialGradient(s/2,s/2,0, s/2,s/2,s/2);
+        g.addColorStop(0, "rgba(255,255,255,1)");
+        g.addColorStop(0.25, "rgba(255,255,255,0.6)");
+        g.addColorStop(1, "rgba(255,255,255,0)");
+        ctx.fillStyle = g;
+        ctx.fillRect(0,0,s,s);
+        const tex = new THREE.CanvasTexture(cnv);
+        tex.minFilter = THREE.LinearFilter;
+        tex.magFilter = THREE.LinearFilter;
+        return tex;
+      })();
 
-    const lineMat = new THREE.ShaderMaterial({
-      transparent: true,
-      depthWrite: false,
-      blending: THREE.AdditiveBlending,
-      uniforms: {
-        uTime: { value: 0 },
-        uBlue: { value: new THREE.Color("#6aaeff") },
-        uOrange: { value: new THREE.Color("#ff9a4a") },
-        uOpacity: { value: 0.38 }
-      },
-      vertexShader: `
-        uniform float uTime;
-        attribute vec3 position;
-        varying float vMix;
-        varying float vFade;
+      const pointsGeo = new THREE.BufferGeometry();
+      const pos = new Float32Array(POINTS*3);
+      for(let i=0;i<POINTS;i++){
+        pos[i*3+0]=pts[i].x; pos[i*3+1]=pts[i].y; pos[i*3+2]=pts[i].z;
+      }
+      pointsGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
 
-        float hash(vec3 p){
-          p = fract(p * 0.3183099 + vec3(0.1,0.2,0.3));
-          p *= 17.0;
-          return fract(p.x*p.y*p.z*(p.x+p.y+p.z));
+      const pointsMat = new THREE.PointsMaterial({
+        size: 0.38,
+        map: spriteTex,
+        transparent: true,
+        depthWrite: false,
+        blending: THREE.AdditiveBlending,
+        opacity: 0.95,
+        color: 0xffffff
+      });
+
+      const points = new THREE.Points(pointsGeo, pointsMat);
+      scene.add(points);
+
+      // Linie: LineSegments z dynamiczną przezroczystością (premium clean)
+      // Precompute najbliższych sąsiadów
+      const indices = [];
+      for(let i=0;i<POINTS;i++){
+        const dists = [];
+        for(let j=0;j<POINTS;j++){
+          if(i===j) continue;
+          const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, dz=pts[i].z-pts[j].z;
+          const d = Math.sqrt(dx*dx+dy*dy+dz*dz);
+          dists.push([d, j]);
         }
-
-        void main(){
-          vec3 pos = position;
-
-          float t = uTime*0.55;
-          float n = hash(pos + t);
-
-          pos.x += sin(t + pos.y*0.35) * 0.55 + (n-0.5)*0.25;
-          pos.y += cos(t*0.9 + pos.x*0.25) * 0.35 + (n-0.5)*0.20;
-          pos.z += sin(t*0.8 + pos.y*0.15) * 0.22;
-
-          vMix = smoothstep(-18.0, 18.0, pos.x);
-
-          float center = exp(-(pos.x*pos.x)/(2.0*55.0) - (pos.y*pos.y)/(2.0*18.0));
-          vFade = 1.0 - 0.62*center;
-
-          gl_Position = projectionMatrix * modelViewMatrix * vec4(pos, 1.0);
+        dists.sort((a,b)=>a[0]-b[0]);
+        for(let k=0;k<CONNECTIONS;k++){
+          if(dists[k][0] < linkMax) indices.push(i, dists[k][1]);
         }
-      `,
-      fragmentShader: `
-        uniform vec3 uBlue;
-        uniform vec3 uOrange;
-        uniform float uOpacity;
-        varying float vMix;
-        varying float vFade;
+      }
 
-        void main(){
-          vec3 col = mix(uBlue, uOrange, vMix);
-          gl_FragColor = vec4(col, uOpacity * vFade);
+      const lineGeo = new THREE.BufferGeometry();
+      lineGeo.setAttribute("position", new THREE.BufferAttribute(pos.slice(), 3));
+      lineGeo.setIndex(indices);
+
+      // Gradient blue->orange realizujemy przez dwa materiały i “mix” via vertex colors:
+      // (prosto: nadamy kolor wierzchołkom w zależności od X)
+      const colors = new Float32Array(POINTS*3);
+      const blue = new THREE.Color("#6aaeff");
+      const orange = new THREE.Color("#ff9a4a");
+      for(let i=0;i<POINTS;i++){
+        const mix = (pts[i].x + RADIUS) / (2*RADIUS); // 0..1
+        const c = blue.clone().lerp(orange, mix);
+        colors[i*3+0]=c.r; colors[i*3+1]=c.g; colors[i*3+2]=c.b;
+      }
+      lineGeo.setAttribute("color", new THREE.BufferAttribute(colors, 3));
+
+      const lineMat = new THREE.LineBasicMaterial({
+        vertexColors: true,
+        transparent: true,
+        opacity: 0.26,
+        blending: THREE.AdditiveBlending
+      });
+
+      const lines = new THREE.LineSegments(lineGeo, lineMat);
+      scene.add(lines);
+
+      // Parallax
+      let targetRotX = 0, targetRotY = 0;
+      hero.addEventListener("pointermove", (e)=>{
+        const r = hero.getBoundingClientRect();
+        const nx = ((e.clientX - r.left)/r.width)*2 - 1;
+        const ny = ((e.clientY - r.top)/r.height)*2 - 1;
+        targetRotY = nx * 0.14;
+        targetRotX = -ny * 0.10;
+      });
+
+      // Resize
+      function resize(){
+        const w = hero.clientWidth, h = hero.clientHeight;
+        renderer.setSize(w, h, false);
+        camera.aspect = w/h;
+        camera.updateProjectionMatrix();
+      }
+      resize();
+      window.addEventListener("resize", resize);
+
+      // Animacja: organiczne pływanie + lekki drift
+      const base = pts.map(p=>p.clone());
+      const clock = new THREE.Clock();
+
+      function animate(){
+        const t = clock.getElapsedTime();
+
+        // Smooth parallax
+        points.rotation.y += (targetRotY - points.rotation.y) * 0.04;
+        points.rotation.x += (targetRotX - points.rotation.x) * 0.04;
+        lines.rotation.copy(points.rotation);
+
+        points.position.x = Math.sin(t*0.15) * 0.25;
+        points.position.y = Math.cos(t*0.12) * 0.18;
+        lines.position.copy(points.position);
+
+        // update pozycji punktów
+        const a = 0.55; // amplituda
+        const b = 0.35;
+        for(let i=0;i<POINTS;i++){
+          const p0 = base[i];
+          const ph = phase[i];
+          const x = p0.x + Math.sin(t*0.55 + ph + p0.y*0.18) * a;
+          const y = p0.y + Math.cos(t*0.48 + ph + p0.x*0.14) * b;
+          const z = p0.z + Math.sin(t*0.40 + ph + p0.y*0.10) * 0.22;
+          pos[i*3+0]=x; pos[i*3+1]=y; pos[i*3+2]=z;
         }
-      `
-    });
+        pointsGeo.attributes.position.needsUpdate = true;
+        lineGeo.attributes.position.needsUpdate = true;
 
-    const lines = new THREE.LineSegments(lineGeo, lineMat);
-    scene.add(lines);
+        // delikatny “pulse” intensywności (premium)
+        lineMat.opacity = 0.20 + (Math.sin(t*0.6)*0.5+0.5)*0.10;
 
-    // Subtelna mgiełka (premium “depth”)
-    scene.fog = new THREE.FogExp2(0xffffff, 0.012);
+        renderer.render(scene, camera);
+        requestAnimationFrame(animate);
+      }
 
-    // Parallax
-    const mouse = { x:0, y:0 };
-    let targetRotX = 0, targetRotY = 0;
+      // Reduced motion
+      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
+        renderer.render(scene, camera);
+        return;
+      }
 
-    hero.addEventListener("pointermove", (e)=>{
-      const r = hero.getBoundingClientRect();
-      const nx = ( (e.clientX - r.left) / r.width ) * 2 - 1;
-      const ny = ( (e.clientY - r.top) / r.height ) * 2 - 1;
-      mouse.x = nx; mouse.y = ny;
-      targetRotY = nx * 0.14;
-      targetRotX = -ny * 0.10;
-    });
-
-    // Anim loop
-    const clock = new THREE.Clock();
-    function animate(){
-      const t = clock.getElapsedTime();
-
-      pointsMat.uniforms.uTime.value = t;
-      lineMat.uniforms.uTime.value = t;
-
-      // Smooth parallax
-      points.rotation.y += (targetRotY - points.rotation.y) * 0.04;
-      points.rotation.x += (targetRotX - points.rotation.x) * 0.04;
-      lines.rotation.copy(points.rotation);
-
-      // Delikatny drift całej sceny
-      points.position.x = Math.sin(t*0.15) * 0.25;
-      points.position.y = Math.cos(t*0.12) * 0.18;
-      lines.position.copy(points.position);
-
-      composer.render();
-      requestAnimationFrame(animate);
-    }
-    animate();
-
-    // Resize
-    const ro = new ResizeObserver(()=>{
-      const w = hero.clientWidth, h = hero.clientHeight;
-      renderer.setSize(w, h, false);
-      camera.aspect = w/h;
-      camera.updateProjectionMatrix();
-      composer.setSize(w, h);
-      bloom.setSize(w, h);
-    });
-    ro.observe(hero);
-
-    // Reduced motion: zamroź animację jeśli user preferuje
-    if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
-      hero.style.background = "radial-gradient(ellipse at center, #ffffff 0%, #f6f7f9 55%, #ffffff 100%)";
-      // zatrzymaj loop: zamiast requestAnimationFrame, render 1 klatkę
-      pointsMat.uniforms.uTime.value = 1.0;
-      lineMat.uniforms.uTime.value = 1.0;
-      composer.render();
-    }
+      animate();
+    })();
   </script>
 </body>
 </html>
