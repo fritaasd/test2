@@ -1,341 +1,216 @@
-<!doctype html>
-<html lang="pl">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>DS Europe – Hero</title>
-  <style>
-    :root{ --bg1:#ffffff; --bg2:#f5f7fb; }
-    html,body{ height:100%; }
-    body{ margin:0; background:var(--bg1); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; }
-    .hero{
-      position:relative;
-      height:min(72vh, 640px);
-      min-height:520px;
-      overflow:hidden;
-      background: radial-gradient(ellipse at center, var(--bg1) 0%, var(--bg2) 55%, var(--bg1) 100%);
-    }
-    canvas{ position:absolute; inset:0; width:100%; height:100%; display:block; }
-    .overlay{
-      position:absolute; inset:0;
-      display:flex; align-items:center; justify-content:center;
-      pointer-events:none;
-    }
-    .glass{
-      position:absolute;
-      width:min(680px, 88vw);
-      height:min(220px, 28vh);
-      border-radius:28px;
-      background: rgba(255,255,255,.55);
-      backdrop-filter: blur(10px);
-      -webkit-backdrop-filter: blur(10px);
-      box-shadow: 0 22px 70px rgba(0,0,0,.06);
-      border: 1px solid rgba(255,255,255,.65);
-      opacity:.55;
-    }
-    .logo{
-      width:min(420px, 76vw);
-      height:auto;
-      filter: drop-shadow(0 14px 34px rgba(0,0,0,.12));
-      transform: translateZ(0);
-    }
-    @media (prefers-reduced-motion: reduce){
-      .glass{ display:none; }
-    }
-  </style>
-</head>
-<body>
-  <section class="hero" id="hero">
-    <canvas id="c"></canvas>
-    <div class="overlay">
-      <div class="glass"></div>
-      <img class="logo" src="logo.png" alt="ds europe" />
+<section class="hero">
+  <div class="hero__bg">
+    <div class="hero__grain"></div>
+    <div class="hero__grid"></div>
+
+    <!-- Render jako „materiał” w tle -->
+    <div class="hero__render" aria-hidden="true"></div>
+
+    <!-- Delikatny highlight -->
+    <div class="hero__glow" aria-hidden="true"></div>
+  </div>
+
+  <div class="hero__content">
+    <div class="hero__kicker">Studio wnętrz • Wrocław</div>
+
+    <h1 class="hero__title">
+      Projektowanie wnętrz<br />
+      <span class="hero__titleAccent">bez wizualnego hałasu</span>
+    </h1>
+
+    <p class="hero__lead">
+      Minimalistyczne, dopracowane przestrzenie — oparte o funkcję, proporcje i światło.
+      Pracuję lokalnie we Wrocławiu.
+    </p>
+
+    <div class="hero__cta">
+      <a class="btn btn--primary" href="#kontakt">Umów konsultację</a>
+      <a class="btn btn--ghost" href="#proces">Zobacz proces</a>
     </div>
-  </section>
 
-  <!-- Three.js (bez modułów) -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <div class="hero__meta">
+      <div class="metaItem">
+        <div class="metaLabel">Zakres</div>
+        <div class="metaValue">mieszkania • domy • inwestycje</div>
+      </div>
+      <div class="metaItem">
+        <div class="metaLabel">Styl</div>
+        <div class="metaValue">premium minimal</div>
+      </div>
+    </div>
+  </div>
+</section>
 
-  <script>
-    (function(){
-      const hero = document.getElementById("hero");
-      const canvas = document.getElementById("c");
+<style>
+  :root{
+    --bg:#0b0c0f;
+    --fg:#f4f4f5;
+    --muted: rgba(244,244,245,.72);
+    --line: rgba(244,244,245,.12);
+    --accent: rgba(244,244,245,.92);
+  }
 
-      if(!hero || !canvas){
-        console.error("Brak #hero lub #c w DOM.");
-        return;
-      }
-      if(!window.THREE){
-        console.error("THREE is not defined — CDN z Three.js nie został załadowany (CSP/offline?).");
-        return;
-      }
+  .hero{
+    position: relative;
+    min-height: 92vh;
+    display: grid;
+    place-items: center;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--fg);
+  }
 
-      // --- Renderer ---
-      const renderer = new THREE.WebGLRenderer({
-        canvas,
-        antialias: true,
-        alpha: true,
-        powerPreference: "high-performance"
+  .hero__bg{
+    position:absolute; inset:0;
+  }
+
+  /* Render – traktujemy go jak „materiał”, nie zdjęcie */
+  .hero__render{
+    position:absolute; inset:-10%;
+    background-image:
+      linear-gradient(to bottom, rgba(11,12,15,.65), rgba(11,12,15,.92)),
+      url("https://i.postimg.cc/cHNqBHJ5/2.jpg");
+    background-size: cover;
+    background-position: center;
+    filter: saturate(.9) contrast(1.05);
+    transform: scale(1.03);
+  }
+
+  /* Subtelny glow (premium) */
+  .hero__glow{
+    position:absolute; inset:-30%;
+    background: radial-gradient(circle at 65% 35%, rgba(244,244,245,.14), transparent 55%);
+    pointer-events:none;
+  }
+
+  /* Grain – daje “druk / magazine” */
+  .hero__grain{
+    position:absolute; inset:0;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)' opacity='.18'/%3E%3C/svg%3E");
+    mix-blend-mode: overlay;
+    opacity:.55;
+    pointer-events:none;
+  }
+
+  /* Siatka jak rysunek techniczny */
+  .hero__grid{
+    position:absolute; inset:0;
+    background:
+      linear-gradient(to right, var(--line) 1px, transparent 1px),
+      linear-gradient(to bottom, var(--line) 1px, transparent 1px);
+    background-size: 110px 110px;
+    mask-image: radial-gradient(circle at 55% 40%, black 0%, transparent 58%);
+    opacity:.55;
+    pointer-events:none;
+  }
+
+  .hero__content{
+    position: relative;
+    width: min(980px, 92vw);
+    padding: clamp(22px, 4vw, 48px);
+  }
+
+  .hero__kicker{
+    font: 500 13px/1.2 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: rgba(244,244,245,.68);
+    margin-bottom: 18px;
+  }
+
+  .hero__title{
+    font: 600 clamp(34px, 5.4vw, 66px)/1.02 ui-serif, Georgia, "Times New Roman", Times, serif;
+    letter-spacing: -.02em;
+    margin: 0 0 18px;
+  }
+
+  .hero__titleAccent{
+    color: var(--accent);
+    opacity: .95;
+  }
+
+  .hero__lead{
+    max-width: 62ch;
+    font: 400 16px/1.7 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+    color: var(--muted);
+    margin: 0 0 26px;
+  }
+
+  .hero__cta{
+    display:flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 28px;
+  }
+
+  .btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    padding: 12px 16px;
+    border-radius: 999px;
+    text-decoration:none;
+    font: 600 14px/1 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+    transition: transform .18s ease, background .18s ease, border-color .18s ease, opacity .18s ease;
+    will-change: transform;
+  }
+  .btn:hover{ transform: translateY(-1px); }
+
+  .btn--primary{
+    background: rgba(244,244,245,.92);
+    color: #0b0c0f;
+  }
+  .btn--ghost{
+    border: 1px solid rgba(244,244,245,.22);
+    color: rgba(244,244,245,.9);
+    background: rgba(11,12,15,.28);
+    backdrop-filter: blur(10px);
+  }
+  .btn--ghost:hover{ border-color: rgba(244,244,245,.35); }
+
+  .hero__meta{
+    display:flex;
+    gap: 18px;
+    flex-wrap: wrap;
+    padding-top: 14px;
+    border-top: 1px solid rgba(244,244,245,.12);
+  }
+  .metaItem{
+    min-width: 220px;
+  }
+  .metaLabel{
+    font: 600 12px/1.4 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+    color: rgba(244,244,245,.58);
+    letter-spacing: .08em;
+    text-transform: uppercase;
+  }
+  .metaValue{
+    font: 400 14px/1.6 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto;
+    color: rgba(244,244,245,.86);
+  }
+
+  @media (max-width: 520px){
+    .hero__grid{ background-size: 86px 86px; }
+  }
+</style>
+
+<script>
+  // Subtelny “parallax” tła (premium: minimalny)
+  (function(){
+    const render = document.querySelector(".hero__render");
+    const glow = document.querySelector(".hero__glow");
+    if(!render || !glow) return;
+
+    let raf = null;
+    window.addEventListener("mousemove", (e) => {
+      if(raf) return;
+      raf = requestAnimationFrame(() => {
+        const x = (e.clientX / window.innerWidth - 0.5) * 2;
+        const y = (e.clientY / window.innerHeight - 0.5) * 2;
+        render.style.transform = `scale(1.03) translate(${x * 6}px, ${y * 6}px)`;
+        glow.style.transform   = `translate(${x * 10}px, ${y * 10}px)`;
+        raf = null;
       });
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-
-      // --- Scene / Camera ---
-      const scene = new THREE.Scene();
-      const camera = new THREE.PerspectiveCamera(42, 1, 0.1, 200);
-      camera.position.set(0, 0, 26);
-
-      // Fog musi być subtelny, inaczej robi „szary overlay” i zabija kolory
-      scene.fog = new THREE.FogExp2(0xffffff, 0.012);
-
-      // --- Palette ---
-      const BLUE   = new THREE.Color("#6aaeff");
-      const ORANGE = new THREE.Color("#ff9a4a");
-
-      // --- Settings ---
-      const POINTS = 180;         // 140–220
-      const RADIUS = 18;
-      const CONNECTIONS = 3;      // 2–4
-      const linkMax = 7.2;        // im mniejsze, tym czyściej
-
-      // Rozkład z pustym środkiem (pod logo)
-      function samplePoint(){
-        for(let tries=0; tries<60; tries++){
-          const x = (Math.random()*2 - 1) * RADIUS;
-          const y = (Math.random()*2 - 1) * (RADIUS*0.55);
-          const z = (Math.random()*2 - 1) * 4.0;
-
-          const cx = x/9.0, cy = y/4.0;
-          const center = Math.exp(-(cx*cx + cy*cy));         // 0..1
-          if (Math.random() < (1 - 0.78*center)) return new THREE.Vector3(x,y,z);
-        }
-        return new THREE.Vector3(
-          (Math.random()*2 - 1) * RADIUS,
-          (Math.random()*2 - 1) * (RADIUS*0.55),
-          (Math.random()*2 - 1) * 4.0
-        );
-      }
-
-      // Punkty bazowe
-      const pts = [];
-      const phase = new Float32Array(POINTS);
-      for(let i=0;i<POINTS;i++){
-        pts.push(samplePoint());
-        phase[i] = Math.random()*Math.PI*2;
-      }
-
-      // Miękki sprite (glow) dla punktów
-      const spriteTex = (function(){
-        const s = 128;
-        const cnv = document.createElement("canvas");
-        cnv.width = cnv.height = s;
-        const ctx = cnv.getContext("2d");
-        const g = ctx.createRadialGradient(s/2,s/2,0, s/2,s/2,s/2);
-        g.addColorStop(0, "rgba(255,255,255,1)");
-        g.addColorStop(0.22, "rgba(255,255,255,0.55)");
-        g.addColorStop(1, "rgba(255,255,255,0)");
-        ctx.fillStyle = g;
-        ctx.fillRect(0,0,s,s);
-        const tex = new THREE.CanvasTexture(cnv);
-        tex.minFilter = THREE.LinearFilter;
-        tex.magFilter = THREE.LinearFilter;
-        return tex;
-      })();
-
-      // --- Geometry: Nodes (points) ---
-      const pointsGeo = new THREE.BufferGeometry();
-      const pos = new Float32Array(POINTS*3);
-      const nodeColors = new Float32Array(POINTS*3);
-
-      for(let i=0;i<POINTS;i++){
-        const p = pts[i];
-        pos[i*3+0]=p.x; pos[i*3+1]=p.y; pos[i*3+2]=p.z;
-
-        // gradient po X (blue->orange)
-        const mix = (p.x + RADIUS) / (2*RADIUS);
-        const c = BLUE.clone().lerp(ORANGE, mix);
-        nodeColors[i*3+0]=c.r; nodeColors[i*3+1]=c.g; nodeColors[i*3+2]=c.b;
-      }
-
-      pointsGeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
-      pointsGeo.setAttribute("color", new THREE.BufferAttribute(nodeColors, 3));
-
-      const pointsMat = new THREE.PointsMaterial({
-        size: 0.36,
-        map: spriteTex,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        opacity: 0.92,
-        vertexColors: true
-      });
-
-      const nodes = new THREE.Points(pointsGeo, pointsMat);
-      scene.add(nodes);
-
-      // --- Build neighbor connections (indices) ---
-      const indices = [];
-      for(let i=0;i<POINTS;i++){
-        const dists = [];
-        for(let j=0;j<POINTS;j++){
-          if(i===j) continue;
-          const dx=pts[i].x-pts[j].x, dy=pts[i].y-pts[j].y, dz=pts[i].z-pts[j].z;
-          const d = Math.sqrt(dx*dx+dy*dy+dz*dz);
-          dists.push([d, j]);
-        }
-        dists.sort((a,b)=>a[0]-b[0]);
-        for(let k=0;k<CONNECTIONS;k++){
-          if(dists[k][0] < linkMax) indices.push(i, dists[k][1]);
-        }
-      }
-
-      // --- Lines geometry ---
-      const lineGeo = new THREE.BufferGeometry();
-      lineGeo.setAttribute("position", new THREE.BufferAttribute(pos.slice(), 3));
-      lineGeo.setIndex(indices);
-
-      // Kolor linii = kolor wierzchołków (gradient)
-      const lineColors = new Float32Array(POINTS*3);
-      lineColors.set(nodeColors);
-      lineGeo.setAttribute("color", new THREE.BufferAttribute(lineColors, 3));
-
-      const lineMat = new THREE.LineBasicMaterial({
-        vertexColors: true,
-        transparent: true,
-        opacity: 0.26,
-        blending: THREE.AdditiveBlending
-      });
-
-      const lines = new THREE.LineSegments(lineGeo, lineMat);
-      scene.add(lines);
-
-      // --- Midpoints (dots on connections) ---
-      const segCount = indices.length / 2;
-      const linkMidGeo = new THREE.BufferGeometry();
-      const linkMidPos = new Float32Array(segCount * 3);
-      const linkMidColors = new Float32Array(segCount * 3);
-
-      function updateMidpointsFromPositions(){
-        for (let s = 0; s < indices.length; s += 2) {
-          const i = indices[s];
-          const j = indices[s + 1];
-
-          const ax = pos[i*3+0], ay = pos[i*3+1], az = pos[i*3+2];
-          const bx = pos[j*3+0], by = pos[j*3+1], bz = pos[j*3+2];
-
-          const m = (s / 2) * 3;
-          const mx = (ax + bx) * 0.5;
-          const my = (ay + by) * 0.5;
-          const mz = (az + bz) * 0.5;
-
-          linkMidPos[m+0]=mx; linkMidPos[m+1]=my; linkMidPos[m+2]=mz;
-
-          // Kolor midpointu jako średnia kolorów końców (spójny gradient)
-          const r = (nodeColors[i*3+0] + nodeColors[j*3+0]) * 0.5;
-          const g = (nodeColors[i*3+1] + nodeColors[j*3+1]) * 0.5;
-          const b = (nodeColors[i*3+2] + nodeColors[j*3+2]) * 0.5;
-          linkMidColors[m+0]=r; linkMidColors[m+1]=g; linkMidColors[m+2]=b;
-        }
-      }
-      updateMidpointsFromPositions();
-
-      linkMidGeo.setAttribute("position", new THREE.BufferAttribute(linkMidPos, 3));
-      linkMidGeo.setAttribute("color", new THREE.BufferAttribute(linkMidColors, 3));
-
-      const linkMidMat = new THREE.PointsMaterial({
-        size: 0.22,
-        map: spriteTex,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-        opacity: 0.55,
-        vertexColors: true
-      });
-
-      const linkMids = new THREE.Points(linkMidGeo, linkMidMat);
-      scene.add(linkMids);
-
-      // --- Parallax ---
-      let targetRotX = 0, targetRotY = 0;
-      hero.addEventListener("pointermove", (e)=>{
-        const r = hero.getBoundingClientRect();
-        const nx = ((e.clientX - r.left)/r.width)*2 - 1;
-        const ny = ((e.clientY - r.top)/r.height)*2 - 1;
-        targetRotY = nx * 0.14;
-        targetRotX = -ny * 0.10;
-      });
-
-      // --- Resize ---
-      function resize(){
-        const w = hero.clientWidth, h = hero.clientHeight;
-        renderer.setSize(w, h, false);
-        camera.aspect = w/h;
-        camera.updateProjectionMatrix();
-      }
-      resize();
-      window.addEventListener("resize", resize);
-
-      // --- Animation ---
-      const base = pts.map(p=>p.clone());
-      const clock = new THREE.Clock();
-
-      function animate(){
-        const t = clock.getElapsedTime();
-
-        // Smooth parallax
-        nodes.rotation.y += (targetRotY - nodes.rotation.y) * 0.04;
-        nodes.rotation.x += (targetRotX - nodes.rotation.x) * 0.04;
-        lines.rotation.copy(nodes.rotation);
-        linkMids.rotation.copy(nodes.rotation);
-
-        // Gentle drift
-        const dx = Math.sin(t*0.15) * 0.25;
-        const dy = Math.cos(t*0.12) * 0.18;
-        nodes.position.set(dx, dy, 0);
-        lines.position.copy(nodes.position);
-        linkMids.position.copy(nodes.position);
-
-        // Update node positions
-        const a = 0.55; // amplitude X
-        const b = 0.35; // amplitude Y
-        for(let i=0;i<POINTS;i++){
-          const p0 = base[i];
-          const ph = phase[i];
-          const x = p0.x + Math.sin(t*0.55 + ph + p0.y*0.18) * a;
-          const y = p0.y + Math.cos(t*0.48 + ph + p0.x*0.14) * b;
-          const z = p0.z + Math.sin(t*0.40 + ph + p0.y*0.10) * 0.22;
-          pos[i*3+0]=x; pos[i*3+1]=y; pos[i*3+2]=z;
-        }
-
-        pointsGeo.attributes.position.needsUpdate = true;
-        lineGeo.attributes.position.needsUpdate = true;
-
-        // Midpoints follow updated endpoints
-        updateMidpointsFromPositions();
-        linkMidGeo.attributes.position.needsUpdate = true;
-
-        // Subtle pulse (no flicker)
-        const pulse = (Math.sin(t*1.2) * 0.5 + 0.5); // 0..1
-
-        lineMat.opacity = 0.18 + pulse * 0.10;
-
-        pointsMat.size = 0.32 + pulse * 0.12;
-        pointsMat.opacity = 0.72 + pulse * 0.18;
-
-        linkMidMat.size = 0.18 + pulse * 0.10;
-        linkMidMat.opacity = 0.34 + pulse * 0.18;
-
-        renderer.render(scene, camera);
-        requestAnimationFrame(animate);
-      }
-
-      // Reduced motion
-      if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches){
-        renderer.render(scene, camera);
-        return;
-      }
-
-      animate();
-    })();
-  </script>
-</body>
-</html>
+    }, { passive:true });
+  })();
+</script>
